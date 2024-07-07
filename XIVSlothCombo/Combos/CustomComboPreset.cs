@@ -1539,7 +1539,7 @@ namespace XIVSlothCombo.Combos
 
         #region Simple ST
 
-        [ReplaceSkill(MCH.SplitShot)]
+        [ReplaceSkill(MCH.SplitShot, MCH.HeatedSplitShot)]
         [ConflictingCombos(MCH_ST_AdvancedMode)]
         [CustomComboInfo("Simple Mode - Single Target", "Replaces Split Shot with a one-button full single target rotation.\nThis is ideal for newcomers to the job.", MCH.JobID)]
         MCH_ST_SimpleMode = 8001,
@@ -3536,7 +3536,7 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Dreadwinder", "Adds Dreadwinder to the rotation.", VPR.JobID)]
         VPR_ST_Dreadwinder = 30006,
 
-        [ParentCombo(VPR_ST_Dreadwinder)]
+        [ParentCombo(VPR_ST_CDs)]
         [CustomComboInfo("Dreadwinder Combo", "Adds Swiftskin's Coil and Hunter's Coil to the rotation.", VPR.JobID)]
         VPR_ST_DreadwinderCombo = 30007,
 
@@ -3550,7 +3550,7 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Uncoiled Fury", "Adds Uncoiled Fury to the rotation.", VPR.JobID)]
         VPR_ST_UncoiledFury = 30009,
 
-        [ParentCombo(VPR_ST_UncoiledFury)]
+        [ParentCombo(VPR_ST_AdvancedMode)]
         [CustomComboInfo("Uncoiled Fury Combo", "Adds Uncoiled Twinfang and Uncoiled Twinblood to the rotation.", VPR.JobID)]
         VPR_ST_UncoiledFuryCombo = 30010,
 
@@ -3610,7 +3610,7 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Pit Of Dread", "Adds Pit Of Dread to the rotation.", VPR.JobID)]
         VPR_AoE_PitOfDread = 30105,
 
-        [ParentCombo(VPR_AoE_PitOfDread)]
+        [ParentCombo(VPR_AoE_CDs)]
         [CustomComboInfo("Pit Of Dread Combo", "Adds Swiftskin's Den and Hunter's Den to the rotation.", VPR.JobID)]
         VPR_AoE_PitOfDreadCombo = 30106,
 
@@ -3624,7 +3624,7 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Uncoiled Fury", "Adds Uncoiled Fury to the rotation.", VPR.JobID)]
         VPR_AoE_UncoiledFury = 30108,
 
-        [ParentCombo(VPR_AoE_UncoiledFury)]
+        [ParentCombo(VPR_AoE_AdvancedMode)]
         [CustomComboInfo("Uncoiled Fury Combo", "Adds Uncoiled Twinfang and Uncoiled Twinblood to the rotation.", VPR.JobID)]
         VPR_AoE_UncoiledFuryCombo = 30109,
 
