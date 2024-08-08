@@ -350,6 +350,14 @@ namespace XIVSlothCombo.Combos.PvE
                 // OK so I decided to code this "state machine" from Most Priority/Less likely to happen to Less Priority/More likely to happen
                 // No matter what is happening anywhere, you hit TS on cooldown
                 // That means moving the ST GCD TD up in the code
+                // ST Standard (Dance) Steps & Fill
+                if ((IsEnabled(CustomComboPreset.DNC_ST_Adv_SS) ||
+                     IsEnabled(CustomComboPreset.DNC_ST_Adv_StandardFill)) &&
+                    HasEffect(Buffs.StandardStep))
+                    return gauge.CompletedSteps < 2
+                        ? gauge.NextStep
+                        : StandardFinish2;
+
                 // ST Technical (Dance) Steps & Fill
                 if ((IsEnabled(CustomComboPreset.DNC_ST_Adv_TS) || IsEnabled(CustomComboPreset.DNC_ST_Adv_TechFill)) &&
                     HasEffect(Buffs.TechnicalStep))
@@ -373,6 +381,7 @@ namespace XIVSlothCombo.Combos.PvE
                 // 1. I don't add a gap to the cooldown remaining time check
                 // 2. I don't check the last action performed
                 // 3. I only care that I have TechnicalFinish or that I'm level locked out of TS
+                // ST Devilment
                 if (IsEnabled(CustomComboPreset.DNC_ST_Adv_Devilment) &&
                     CanWeave(actionID) &&
                     LevelChecked(Devilment) &&
@@ -386,6 +395,7 @@ namespace XIVSlothCombo.Combos.PvE
                 // 1. I don't check the last action performed
                 // 2. I don't check burst status (Flourish doesn't do damage, and due to being 60s, it's impossible to miss raid windows on both (at least one will fit)
                 // 3. FinishingMoveReady, FourFoldDance, Floursihing Symmetry and Florishing Flow cannot be stacked so no need to check for those
+                // ST Flourish
                 if (IsEnabled(CustomComboPreset.DNC_ST_Adv_Flourish) &&
                     CanWeave(actionID) &&
                     ActionReady(Flourish) &&
@@ -408,7 +418,7 @@ namespace XIVSlothCombo.Combos.PvE
                     (HasEffect(Buffs.ThreeFoldFanDance) ||
                      HasEffect(Buffs.FourFoldFanDance)) &&
                      CombatEngageDuration().TotalSeconds > 20 &&
-                     HasEffect(Buffs.TechnicalFinish) &&
+                     HasEffect(Buffs.TechnicalFinish) && 
                      GetCooldownRemainingTime(Flourish) > 58)
                 {
                     if (HasEffect(Buffs.ThreeFoldFanDance) && CanDelayedWeave(actionID))
@@ -419,9 +429,9 @@ namespace XIVSlothCombo.Combos.PvE
 
                 // ST Interrupt
                 if (IsEnabled(CustomComboPreset.DNC_ST_Adv_Interrupt) &&
-                CanInterruptEnemy() &&
-                ActionReady(All.HeadGraze) &&
-                !HasEffect(Buffs.TechnicalFinish))
+                    CanInterruptEnemy() &&
+                    ActionReady(All.HeadGraze) &&
+                    !HasEffect(Buffs.TechnicalFinish))
                     return All.HeadGraze;
 
                 // Variant Cure
@@ -922,7 +932,7 @@ namespace XIVSlothCombo.Combos.PvE
                     {
                         // AoE Fan Dance overcap protection
                         if (IsEnabled(CustomComboPreset.DNC_AoE_FanDanceOvercap) &&
-                            LevelChecked(FanDance2) && gauge.Feathers is 4 &&
+                            LevelChecked(FanDance2) && gauge.Feathers is 4 && 
                             (HasEffect(Buffs.SilkenSymmetry) || HasEffect(Buffs.SilkenFlow)))
                             return FanDance2;
 

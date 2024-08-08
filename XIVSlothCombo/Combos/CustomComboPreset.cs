@@ -832,7 +832,7 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Standard Step to Last Dance Feature", "Change Standard Step or Finishing Move to Last Dance when available.", DNC.JobID)]
         DNC_StandardStep_LastDance = 4086,
 
-        // Technical Step --> Devilment
+            // Technical Step --> Devilment
         [ReplaceSkill(DNC.StandardStep, DNC.FinishingMove)]
         [ConflictingCombos(DNC_ST_AdvancedMode, DNC_AoE_AdvancedMode)]
         [CustomComboInfo("Technical Step to Devilment Feature", "Change Technical Step to Devilment as soon as possible.", DNC.JobID)]
@@ -1026,7 +1026,6 @@ namespace XIVSlothCombo.Combos
         // Last value = 4088
 
         #endregion
-
 
         #region DARK KNIGHT
 
