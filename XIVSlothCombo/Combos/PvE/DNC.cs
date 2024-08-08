@@ -257,6 +257,15 @@ namespace XIVSlothCombo.Combos.PvE
 
             protected override uint Invoke(uint actionID, uint lastComboMove, float comboTime, byte level)
             {
+                // OK so just to be on the same page here are some notes that I made
+                // The whole spirit of this version is to focus on DNC core abilities (kinda like TNKs where sloth gives the rotation but it's your job to keep yourself alive)
+                // There is some room for auto-adjustment in case the rotation goes off the rails, but didn't focus on that initially
+                // 1. The following priority system will revolve around raid buffs, nothing is more important than that
+                // 2. Stats have NO impact in the timing of said raid buffs (This is probably a huge mistake since skill speed is a thing, but working around it shouldn't be that hard)      
+                // 3. I'm making every tick box enabled and have no care about enemy hp, etc. (Since those are just conditions you add depending on the settings)
+                // 4. I don't include healing, interrupts, mitigation, variant dungeons, etc.
+                // 5. I'll try not to mess up with this code base too much to keep the spirit of the changes intact
+                // 6. I'll add my own class for comparisson sake
                 if (actionID is not Cascade) return actionID;
 
                 #region Variables
@@ -304,6 +313,8 @@ namespace XIVSlothCombo.Combos.PvE
                     !HasEffect(Buffs.TechnicalFinish);
                 #endregion
 
+                // I actually removed all of this from my side, since prepull is basically SS + Peloton
+                // And the priority system forces you to have SF at all times (This is probably a min/max thing so I didn't worry too much)
                 #region Pre-pull
 
                 if (!InCombat())
@@ -336,6 +347,9 @@ namespace XIVSlothCombo.Combos.PvE
                 #endregion
 
                 #region Dance Fills
+                // OK so I decided to code this "state machine" from Most Priority/Less likely to happen to Less Priority/More likely to happen
+                // No matter what is happening anywhere, you hit TS on cooldown
+                // That means moving the ST GCD TD up in the code
                 // ST Standard (Dance) Steps & Fill
                 if ((IsEnabled(CustomComboPreset.DNC_ST_Adv_SS) ||
                      IsEnabled(CustomComboPreset.DNC_ST_Adv_StandardFill)) &&
@@ -350,9 +364,23 @@ namespace XIVSlothCombo.Combos.PvE
                     return gauge.CompletedSteps < 4
                         ? gauge.NextStep
                         : TechnicalFinish4;
+
+                // ST Standard (Dance) Steps & Fill
+                if ((IsEnabled(CustomComboPreset.DNC_ST_Adv_SS) ||
+                     IsEnabled(CustomComboPreset.DNC_ST_Adv_StandardFill)) &&
+                    HasEffect(Buffs.StandardStep))
+                    return gauge.CompletedSteps < 2
+                        ? gauge.NextStep
+                        : StandardFinish2;
                 #endregion
 
                 #region Weaves
+                // OK here is where things get tricky
+                // Devilment -> Flourish -> FanDance4 -> FanDance3 -> FanDance1 
+                // ST Devilment => To me Devilment only has two conditions: Off cooldown and while burst (TF buff)
+                // 1. I don't add a gap to the cooldown remaining time check
+                // 2. I don't check the last action performed
+                // 3. I only care that I have TechnicalFinish or that I'm level locked out of TS
                 // ST Devilment
                 if (IsEnabled(CustomComboPreset.DNC_ST_Adv_Devilment) &&
                     CanWeave(actionID) &&
@@ -363,6 +391,10 @@ namespace XIVSlothCombo.Combos.PvE
                      !LevelChecked(TechnicalStep)))
                     return Devilment;
 
+                // ST Flourish => To me Flourish only has two conditions: Off cooldown and prevent overcapping FanDance3             
+                // 1. I don't check the last action performed
+                // 2. I don't check burst status (Flourish doesn't do damage, and due to being 60s, it's impossible to miss raid windows on both (at least one will fit)
+                // 3. FinishingMoveReady, FourFoldDance, Floursihing Symmetry and Florishing Flow cannot be stacked so no need to check for those
                 // ST Flourish
                 if (IsEnabled(CustomComboPreset.DNC_ST_Adv_Flourish) &&
                     CanWeave(actionID) &&
@@ -396,7 +428,7 @@ namespace XIVSlothCombo.Combos.PvE
                 }
 
                 // ST Interrupt
-                    if (IsEnabled(CustomComboPreset.DNC_ST_Adv_Interrupt) &&
+                if (IsEnabled(CustomComboPreset.DNC_ST_Adv_Interrupt) &&
                     CanInterruptEnemy() &&
                     ActionReady(All.HeadGraze) &&
                     !HasEffect(Buffs.TechnicalFinish))
@@ -415,6 +447,11 @@ namespace XIVSlothCombo.Combos.PvE
                     CanWeave(actionID))
                     return Variant.VariantRampart;
 
+                // Feahers => Here I just check whether I'm buffed and in burst or close to burst (for FanDance4)
+                // 1. I don't check the last action performed
+                // 2. For FourFoldFanDance I check If I'm in burst or far from burst (5s check for TS)
+                // 3. For FanDance1 I consumed them when capped (always) instead of using them always when out of TF (early levels)
+                //  An advantage of this approach is that in fights where there are raidbuffs outside of TF, you can bank them
                 if (CanWeave(actionID) && !WasLastWeaponskill(TechnicalFinish4))
                 {
                     if (HasEffect(Buffs.ThreeFoldFanDance))
@@ -472,10 +509,18 @@ namespace XIVSlothCombo.Combos.PvE
                 #endregion
 
                 #region GCD
+                // OK so here is where weird stuff started happening to me and why I decided to check the code
+                // I simplified the logic of needToTech, removed the margins of error and so on but it shouldn't have an impact
+                // 1. Technical Step is king (nothing else should get in the way of pressing it
                 // ST Technical Step
                 if (needToTech)
                     return TechnicalStep;
-
+                // 2. Last Dance vs Dance of the Dawn
+                // Here I couldn't decide on priority, my mind tells me Dance of the Dawn is more important
+                // Because using LastDance means another GCD, meaning more Esprit generation that could overcap you
+                // But on the other hand using Dance of the Dawn (which only happens in burst - meaning you have time) could screw over the timeout of LastDance
+                // So I'm risking overcapping Esprit on 1 GCD rather than risk losing LastDance (No 10 moves ahead 4D chess here, just coding what I would do playing normally)
+                // -- For Last Dance I check If I'm in burst or far from burst (5s check for TS)
                 // ST Last Dance
                 if (IsEnabled(CustomComboPreset.DNC_ST_Adv_LD) && // Enabled
                     HasEffect(Buffs.LastDanceReady) && // Ready
@@ -486,19 +531,10 @@ namespace XIVSlothCombo.Combos.PvE
                      GetBuffRemainingTime(Buffs.LastDanceReady) < 4)) // Or last second
                     return LastDance;
 
-                // ST Standard Step (Finishing Move)
-                if (needToStandardOrFinish && needToFinish)
-                    return OriginalHook(FinishingMove);
-
-                // ST Standard Step
-                if (needToStandardOrFinish && needToStandard)
-                    return StandardStep;
-
-                // Emergency Starfall usage
-                if (HasEffect(Buffs.FlourishingStarfall) &&
-                    GetBuffRemainingTime(Buffs.FlourishingStarfall) < 4)
-                    return StarfallDance;
-
+                // 3. Dance of the Dawn
+                // This is one of the weird things that happened to me, so TL;DR SimpleDNC prioritized Tillana (which gives 50 Esprit)
+                // Before consuming Dance of the Dawn (only way to salvage this is to set the threshold to 50, but if 70-80 Tillana happens first in some cases)
+                // So Dance of the Dawn kicks in if I have resources, period
                 // ST Dance of the Dawn
                 if (IsEnabled(CustomComboPreset.DNC_ST_Adv_DawnDance) &&
                     HasEffect(Buffs.DanceOfTheDawnReady) &&
@@ -510,25 +546,15 @@ namespace XIVSlothCombo.Combos.PvE
                      (GetBuffRemainingTime(Buffs.DanceOfTheDawnReady) < 5 && gauge.Esprit >= 50))) // emergency use
                     return OriginalHook(DanceOfTheDawn);
 
-                // ST Saber Dance (Emergency Use)
-                if (IsEnabled(CustomComboPreset.DNC_ST_Adv_SaberDance) &&
-                    LevelChecked(SaberDance) &&
-                    (gauge.Esprit >= Config.DNC_ST_Adv_SaberThreshold || // above esprit threshold use
-                     (HasEffect(Buffs.TechnicalFinish) && gauge.Esprit >= 50)) && // will overcap with Tillana if not used
-                    ActionReady(SaberDance))
-                    return LevelChecked(DanceOfTheDawn) &&
-                           HasEffect(Buffs.DanceOfTheDawnReady)
-                        ? OriginalHook(DanceOfTheDawn)
-                        : SaberDance;
+                // 4. Finishing Move
+                // Here I just check that I have the buff and the action is ready (Don't care about the rest)
+                // Again This is a consequence of Flourish, so it will land in raid buffs
+                // ST Standard Step (Finishing Move)
+                if (needToStandardOrFinish && needToFinish)
+                    return OriginalHook(FinishingMove);
 
-                if (HasEffect(Buffs.FlourishingStarfall))
-                    return StarfallDance;
-
-                // ST Tillana
-                if (HasEffect(Buffs.FlourishingFinish) &&
-                    IsEnabled(CustomComboPreset.DNC_ST_Adv_Tillana))
-                    return Tillana;
-
+                // 5. Saber Dance
+                // Above Threshold or in burst (this is ok, but still moved it up in the priority
                 // ST Saber Dance
                 if (IsEnabled(CustomComboPreset.DNC_ST_Adv_SaberDance) &&
                     LevelChecked(SaberDance) &&
@@ -538,6 +564,23 @@ namespace XIVSlothCombo.Combos.PvE
                      IsOffCooldown(TechnicalStep))) // Tech is up
                     return SaberDance;
 
+                // 6. Starfall Dance
+                // On cooldown
+                if (HasEffect(Buffs.FlourishingStarfall))
+                    return StarfallDance;
+
+                // 7. Tillana
+                // On cooldown
+                if (HasEffect(Buffs.FlourishingFinish) &&
+                    IsEnabled(CustomComboPreset.DNC_ST_Adv_Tillana))
+                    return Tillana;
+
+                // 8. Standard Step
+                // As low as this looks, all of the above have such dependency on this that it flows naturally as far as I've tested
+                if (needToStandardOrFinish && needToStandard)
+                    return StandardStep;
+
+                // No need for emergency workarounds in my case as far as I could tell.
                 // ST combos and burst attacks
                 if (LevelChecked(Fountain) &&
                     lastComboMove is Cascade &&
